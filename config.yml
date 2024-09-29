@@ -1,0 +1,22 @@
+log_level: INFO
+log_file: /var/log/grafana_cloud_stack_manager.log
+org_slug: fortna
+
+token_valid_duration_days: 365
+
+
+main_stack: 
+  name: fortna.grafana.net
+  prometheus_datasource_uid: 'grafanacloud-prom'
+  loki_datasource_uid: 'grafanacloud-logs'
+  tempo_datasource_uid: 'grafanacloud-traces'
+
+
+client_names_to_skip: 
+   - Pets At Home
+   - UMG
+   - Frasers Group
+  #  - Target
+   - Precision Planting
+   - Ulta
+   - Canadian Tire
