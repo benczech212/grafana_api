@@ -313,3 +313,35 @@ class GrafanaApi:
         # Query, Edit Admin
         response = self.handle_response(requests.post(url, headers=self.headers, data=json.dumps(data)))
         return response
+    
+
+    ################################################################################################
+
+    def get_user(self, user_id):
+        """
+        Gets details for a specific user.
+
+        Args:
+          user_id: The ID of the user.
+
+        Returns:
+          The user details as a JSON object.
+        """
+        self.logger.info(f"Getting user {user_id}")
+        url = f"{self.grafana_root_url}/api/users/{user_id}"
+        response = self.handle_response(requests.get(url, headers=self.headers))
+        self.logger.debug(f"Got user {user_id}")
+        return response
+
+    def get_users(self):
+        """
+        Gets a list of all users.
+
+        Returns:
+          A list of user objects.
+        """
+        self.logger.info("Getting users")
+        url = f"{self.grafana_root_url}/api/users"
+        response = self.handle_response(requests.get(url, headers=self.headers))
+        self.logger.debug(f"Found {len(response)} users")
+        return response

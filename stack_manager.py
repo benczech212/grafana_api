@@ -35,7 +35,7 @@ class StackManager:
             sys.exit(1)
         else: self.main_stack = self.main_stack[0]
         self.main_stack_grafana_api = GrafanaApi(secrets["GRAFANA_TOKEN"],self.main_stack["url"],self.logger)
-        self.client_info = self.get_clients_from_prometheus(self.stacks,self.main_stack_name)
+        
             
     def setup_logger(self):
         self.logger = logging.getLogger(__name__)
@@ -57,19 +57,19 @@ class StackManager:
         return self.logger
     
     
-    def create_stacks(self,primary_key="client_name",env={'client_environment':"Production"},excludes=None):
+    def create_stacks(self,client,primary_key="client_name",env={'client_environment':"Production"},excludes=None):
         excludes = self.config["client_names_to_skip"] if not excludes else excludes
         self.logger.info("Creating stacks")
         env_key, env_value = list(env.items())[0]
-        unique_environments = set([client["client_name"] for client in self.client_info.values() if client[env_key] == env_value and client[primary_key] not in excludes])
+        unique_environments = set([client["client_name"] for client in client_info.values() if client[env_key] == env_value and client[primary_key] not in excludes])
         self.logger.debug(f"Unique environments: {unique_environments}")
         for environment in unique_environments:
             self.logger.info(f"Creating stack for {environment}")
             slug = 'fortna-' + environment.lower().replace(" ", "-")
-            
+            url = f'fortna{environment.lower().replace(" ", "")}.grafana.net'
             # Create stack
             self.logger.info(f"Creating stack {environment} with slug {slug}")
-            new_stack = self.cloud_api.upsert_stack(name=environment,slug=slug,region=self.main_stack["regionSlug"],description=f"Stack for {environment}",labels={"client-name": environment, "client-slug": slug, "client-environment": "Production"})
+            new_stack = self.cloud_api.upsert_stack(name=environment,slug=slug,url=url,region=self.main_stack["regionSlug"],description=f"Stack for {environment}",labels={"client-name": environment, "client-slug": slug, "client-environment": "Production"})
             new_grafana_api = GrafanaApi(secrets["GRAFANA_TOKEN"],new_stack["url"],self.logger)
             # Create access policy
             self.logger.info(f'Creating access policy for {environment}')
@@ -79,8 +79,8 @@ class StackManager:
             self.logger.info(f"Creating access policy token for {environment}")
             token_name = f"{slug}-token"
             token_display_name = f"Token for {environment}"
-            token_expire_date = datetime.datetime.now() + datetime.timedelta(days=365)
-            new_token = self.create_access_policy_token(token_name,token_display_name,new_access_policy["id"],new_stack["regionSlug"],token_expire_date)
+            # token_expire_date = datetime.datetime.now() + datetime.timedelta(days=365)
+            new_token = self.create_access_policy_token(token_name,token_display_name,new_access_policy["id"],new_stack["regionSlug"])
             
             # Create prometheus datasource
             self.logger.info(f"Creating datasource for {environment}")
@@ -163,4 +163,6 @@ class StackManager:
 config = load_yml(CONFIG_FILE)
 secrets = load_yml(SECRET_FILE)
 stack_manager = StackManager(config,secrets)
-stack_manager.create_stacks()
+client_info = stack_manager.get_clients_from_prometheus(stack_manager.stacks,stack_manager.main_stack_name)
+
+stack_manager.create_stacks(client_info)
